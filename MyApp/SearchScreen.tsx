@@ -1,20 +1,44 @@
 import React, {useEffect, useState} from 'react';
 import {
   FlatList,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
-  useColorScheme,
   Image,
   View,
   TouchableWithoutFeedback,
+  Platform,
 } from 'react-native';
+import { PERMISSIONS } from 'react-native-permissions';
 import {BaseSearch} from './BaseSearch';
+import { getCurrentLocation } from './GeoLocationService';
+import { PermissionsHelper } from './PermissionHelper';
+
+const location = Platform.select({
+  'android': PERMISSIONS.ANDROID.ACCESS_BACKGROUND_LOCATION,
+  'ios': PERMISSIONS.IOS.LOCATION_WHEN_IN_USE,
+  'default': null as any
+});
+
+let permission: boolean = false
 
 const SearchScreen = () => {
   const [searchItems, setSearchItems] = useState(() => [] as string[]);
+
+  const onPressCurrentLocation = async () => {
+    if(permission) {
+      const response = await getCurrentLocation();
+      console.log(response.address?.formattedAddress)
+    } else {
+      console.log('Permission denied.')
+    }
+  }
+
+  useEffect(() => {
+    const permissionAsync = async () => {
+      permission = await PermissionsHelper.requestPermission(location, "Enable Location Services", `HxGN OnCall Mobile uses HxGN OnCall Dispatch | Tracker for location tracking when the app is in the foreground and background. This information is only used by the HxGN OnCall suite of products. \n\nPlease go to settings and set location permission to \"Allow all the time\" `);
+    }
+    permissionAsync();
+  },[])
 
   const renderSearchItem = (searchItem: any) => {
     console.log(searchItem);
@@ -71,7 +95,9 @@ const SearchScreen = () => {
             alignItems: 'center',
             flexDirection: 'row',
           }}
-          onPress={() => {}}>
+          onPress={() => {
+            onPressCurrentLocation();
+          }}>
           <Text
             style={{
               fontSize: 14,
